@@ -7,6 +7,7 @@ from PIL import ImageTk, Image
 import time
 import pygame
 import os
+import slasher_showdown
 
 """
     Final Girl: A Horror RPG Console Game
@@ -78,6 +79,7 @@ def showInstructions():
               get [item]
               open [item]
               say [dialogue]
+              drop [item]
               inventory (to see what you're carrying)
     ''')
 
@@ -203,7 +205,7 @@ rooms = {
             'Bathroom' : {
                 'west' : 'Bedroom',
                 'description' : """
-            A body lies in the bathtub, rolled up in the shower curtain. A can of hairspray, a brush,
+            A body lies in the bathtub, rolled up in the shower curtain. A can of Aquanet, a brush,
             and a bloody tube of toothpaste are scattered around the sink. The only door is the way you
             came in. There is no other way out.
                 """,
@@ -253,7 +255,7 @@ def main():
     
     showInstructions()
     showStatus()
-    
+
     #loop forever
     while True:
         update_time()
@@ -265,12 +267,24 @@ def main():
             move = input('>')
         
         # split input into action and detail
-        move = move.lower().split(" ", 1)
+        move = move.lower().strip().split(" ", 1)
     
         #if they type 'inventory'
         if move[0] == 'inventory':
             print('You\'re carrying: ' + 'empty' if not inventory else 'You\'re carrying: ' + ' '.join(inventory))
 
+
+        #if they want help
+        if move[0] == 'help' or move[0] == 'commands':
+            print("""
+            Commands:
+              go [direction]
+              get [item]
+              open [item]
+              say [dialogue]
+              drop [item]
+              inventory (to see what you're carrying)
+            """)
         #if they type 'go' first
         if move[0] == 'go':
             #check that they are allowed wherever they want to go
@@ -304,7 +318,7 @@ def main():
             else:
                 #tell them they can't get it
                 print('Can\'t get ' + move[1] + '!')
-                if len(inventory) < 6: 
+                if len(inventory) > 6: 
                      print("""
                  Your pockets are full, my friend, and you\'re too panicked to drop anything.
                  """)
@@ -328,47 +342,47 @@ def main():
         if move[0] == 'open':
             if move[1] != 'book':
                 print("""
-                Why, tho? I mean, don't you have better things to do? Like, outwit a killer?
+            Why, tho? I mean, don't you have better things to do? Like, outwit a killer?
                 """)
             else:
                 print("""
-                When you crack open the cover of the very old, leather-bound book, it flops open
-                to a bookmarked page. There is blood spatter on the paper, but the page has only
-                some words that look like Latin, and someone has scrawled in pencil beside it: 
-                say incantation!
+            When you crack the cover of the very old, leather-bound book, it flops open
+            to a bookmarked page. There is blood spatter on the paper, but the page has only
+            some words that look like Latin, and someone has scrawled in pencil beside it: 
+            important incantations!
                 """)
 
 
         # Respond to "say" commands
         if move[0] == 'say':
-            if move[1] == 'incantation':
+            if move[1] == 'incantation' or move[1] == 'incantations':
                 inventory += ['incantation']
                 print("""
-                You try out the words in a whisper a few times, and when you think you might
-                have the words somewhat right, you say them aloud:
+            You try out the words in a whisper a few times, and when you think you might
+            have the words somewhat right, you say them aloud:
                 
-                Morrigan mé a chosaint agus neart a thabhairt dom!
+            Morrigan mé a chosaint agus neart a thabhairt dom!
 
-                You realize that's probably not Latin after all, but whatever. Now you've made noise.
-                It's time to move before the killer finds you.
+            You realize that's probably not Latin after all, but whatever. Now you've made noise.
+            It's time to move before the killer finds you.
                 """)
             else:
                 print("""
-                So, like, when did you decide you have a deathwish? Do you not understand what's
-                going on here?? Hush it and survive.
+            So, like, when did you decide you have a deathwish? Do you not understand what's
+            going on here?? Hush it and survive.
                 """)
 
 
         # If they're dumb enough to run upstairs when there's a killer in the house
         if currentRoom == "Upstairs":
             print("""
-                What are you, a noob?? Never run up the stairs when a killer is looking for you.
-                The killer comes up behind you, and you lunge for the landing. You never make it.
-                As you lose consciousness, you see the terrified little girl run from the bedroom with
-                a snowglobe in her hand. She throws it at the killer, and the wet crack of its impact 
-                against his head and his body crashing down the stairs are the last things you hear. 
+            What are you, a noob?? Never run up the stairs when a killer is looking for you.
+            The killer comes up behind you, and you lunge for the landing. You never make it.
+            As you lose consciousness, you see the terrified little girl run from the bedroom with
+            a snowglobe in her hand. She throws it at the killer, and the wet crack of its impact 
+            against his head and his body crashing down the stairs are the last things you hear. 
                 
-                She is the Final Girl.
+            She is the Final Girl.
             """)
             play_sound("killer")
             break
@@ -377,11 +391,11 @@ def main():
         # Losing scenario: They run out of time
         if time_str == "02:34":
             print("""
-                From behind you in the {currentRoom}, you hear the shuffle of feet and the scrape of metal against wall.
+            From behind you in the {currentRoom}, you hear the shuffle of feet and the scrape of metal against wall.
 
-                Time has run out. The killer has found you. 
+            Time has run out. The killer has found you. 
                 
-                You are not the Final Girl.
+            You are not the Final Girl.
             """)
             play_sound("killer")
             
@@ -390,6 +404,12 @@ def main():
 
         # If they have gathered the necessary requirements for the fisticuffs, start the finale mode
         if check_win():
+            if "poker" in inventory:
+                weapon = "poker"
+            else:
+                weapon = "knife"
+
+            slasher_showdown.fight(weapon)
             print('Great battle ensues! You win!')
             break
 
