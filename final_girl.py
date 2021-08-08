@@ -8,17 +8,32 @@ import time
 import pygame
 import os
 
-"""Driving a simple game framework with
-   a dictionary object | Alta3 Research"""
+"""
+    Final Girl: A Horror RPG Console Game
+    Based on code from Alta3.
+"""
 
-# Replace RPG starter project with this code when new instructions are live
+
+"""
+    Set the time and the printable time as globals that constrain the game play and create a loss case.
+"""
 current_time = datetime(year=1993, month=6, day= 18, hour=2, minute=17, second=0)
 time_str = current_time.strftime('%H:%M')
 
+
+"""
+    Create a splash screen to introduce the game. Overrideredirect keeps the window frame from containing
+    decoration, buttons, etc. The after() will close teh window after 5 seconds so console game play can
+    commence.
+
+    In case Tkinter crashes and burns, this is collected in a try/except. Splash screen is unnecessary to 
+    game play, so there are no consequences to continuing game play if it crashes.
+"""
 def splashScreen():
     try:
         display = Tk()
-        img = ImageTk.PhotoImage(Image.open('image/finalfinalgirl.png'))
+        display.overrideredirect(True)
+        img = ImageTk.PhotoImage(Image.open('image/finalfinalgirl.png'))  
         mlabel = Label(display)
         mlabel.pack()
         panel = Label(display, image=img)
@@ -32,56 +47,78 @@ def splashScreen():
         file.close()
 
 
+"""
+    Display an introduction to the game and instructions for game play. Executes once, after the splash screen
+    is destroyed.
+"""
+
 def showInstructions():
-    """Show the game instructions when called"""
-    #print a main menu and the commands
+    # Game introduction
     print('''
-    Final Girl: A Horror RPG Game
-    ========
-    It's 1993. You were visiting a friend as she babysat at a neighbor's house.
-    But now, you are the last would-be victim of a preternatural killer on the loose.
+            Final Girl: A Horror RPG Game
+            ========
+            It's 1993. While visiting a friend babysitting at a neighbor's house, friends, neighbors,
+            and even a police officer are brutally murdered by a killer you have not yet seen.
+            Now you are the last would-be victim of a preternatural killer who should have died four stabs 
+            and three crushing blows ago.
 
-    Can you be the Final Girl and live to see daylight? Or will that honor go to the 
-    child sleeping upstairs, somehow oblivious to all the screaming downstairs? Because
-    of course, when it's something big, they don't wake up, but if it's a dog
-    barking two miles away and you were busy doing stuff, nooooo, they won't
-    sleep through that, will they?
+            Can you be the Final Girl and live to see daylight? Or will that honor go to the 
+            child sleeping upstairs, somehow oblivious to the mayhem downstairs? Because
+            of course, when it's something big, they don't wake up, but a bee drops a silent one two miles   
+            away when you were busy doing stuff, and they'll wake up screaming.
 
-    Anyway.
+            Anyway.
 
-    Find a way to kill the psycho before the psycho kills you.
+            Find a way to kill the psycho before the psycho kills you.
 
-    ( No tiny people will be harmed during the playing of this game. )
+            ( No tiny people will be harmed during the playing of this game. )
 
-    Commands:
-      go [direction]
-      get [item]
-      open [item]
-      say [dialogue]
-      inventory (to see what you're carrying)
+            Commands:
+              go [direction]
+              get [item]
+              open [item]
+              say [dialogue]
+              inventory (to see what you're carrying)
     ''')
 
+
+"""
+    Show the current status of the player. 
+    @ newroom       boolean         True  = show setting details
+                                    False = suppress setting details
+"""
 def showStatus():
-    """determine the current status of the player"""
-    #print the player's current status
+    #print the player's current location
     print('---------------------------')
     print('You are in the ' + currentRoom)
+    
     #print the room description
     print(rooms[currentRoom]['description'])
-    #print the current inventory
-    #print('Inventory : ' + str(inventory))
-    #print an item if there is one
+    
+    # print any items available in the room
     if "item" in rooms[currentRoom]:
         print('You see: ', end="")
         for thing in rooms[currentRoom]['item']:
             print(thing + " ", end="")
     print("\n---------------------------")
 
+
+"""
+    Each iteration of the game loop increments the time by 30 seconds. 
+"""
 def update_time():
     global current_time, time_str
     current_time += timedelta(seconds=20) # add a minute for each loop
     time_str = current_time.strftime('%H:%M')
 
+
+"""
+    Check for eligibility to win:
+        x performed incantation
+        x currently outside
+        x hairspray & lighter in inventory
+        x something sharp in inventory
+"""
 def check_win():
     global inventory, currentRoom
     # must have completed the incantation, gone outside, and collected hairspray and lighter
@@ -93,6 +130,30 @@ def check_win():
     if "knife" not in inventory and "poker" not in inventory: retval = False
     if "incantation" not in inventory: retval = False
     return retval
+
+
+"""
+    Play sound effects
+"""
+def play_sound(filename):
+    # Initialize mixer
+    pygame.mixer.init()
+
+    # Define sound files directory
+    sd = 'sound'
+    filename = filename + ".ogg"
+
+    # Set up sound to play
+    sound = pygame.mixer.Sound(os.path.join(sd, filename))
+    
+    # Play the sound
+    sound.play()
+
+    # For closing sound effects, pause
+    if (filename == "killer.ogg"):
+        while (pygame.mixer.get_busy()):
+                time.sleep(0.1)
+
 
 
 
@@ -107,10 +168,10 @@ rooms = {
                 'north' : 'Living Room',
                 'east'  : 'Bathroom',
                 'description' : f"""
-                    An unmade bed sits against the wall, and a bedside table holds a stack of books and a phone. 
-                    The curtains for the south-facing window are torn and partially obscure the streetlights. The
-                    doors are to the north and east. A digital alarm clock shows the current time.
-                    """,
+            An unmade bed sits against the wall, and a bedside table holds a stack of books and a phone. 
+            The curtains for the south-facing window are torn and partially obscure the streetlights. The
+            doors are to the north and east. A digital alarm clock shows the current time.
+                """,
                 'item' : ['book', 'phone']
             },
 
@@ -120,10 +181,11 @@ rooms = {
                 'east'  : 'Front Yard',
                 'upstairs' : "Upstairs",
                 'description' : """
-                    A toppled couch barely hides the body of your friend, the television is playing static, 
-                    and someone, somewhere in the house, is whimpering. A bloody poker sits by the fireplace.
-                    There are doors to the south, west, and east, and a dark staircase is behind the television.
-                    """,
+            A toppled couch barely hides the body of your friend, the television is playing static, 
+            and someone, somewhere in the house, is whimpering. A bloody poker sits by the fireplace.
+            There are doors to the south, west, and east, and a dark staircase leading upstairs is 
+            behind the television.
+                """,
                 'item' : ['poker']
             },
             
@@ -131,48 +193,48 @@ rooms = {
                 'east' : 'Living Room',
                 'west' : 'Back Yard',
                 'description' : """
-                    Window curtains billow from the window over the sink. The water is running, and a large knife
-                    sits by the sink. The kitchen table has a pack of cigarettes, an ashtray, and a lighter. The
-                    doors are to the east and west.
-                    """,
+            Window curtains billow from the window over the sink. The water is running, and a large knife
+            sits by the sink. The kitchen table has a pack of cigarettes, an ashtray, and a lighter. The
+            doors are to the east and west.
+                """,
                 'item' : ['knife', 'cigarettes', 'ashtray', 'lighter']
             },
 
             'Bathroom' : {
                 'west' : 'Bedroom',
                 'description' : """
-                    A body lies in the bathtub, rolled up in the shower curtain. A can of hairspray, a brush,
-                    and a bloody tube of toothpaste are scattered around the sink. The only door is the way you
-                    came in. There is no other way out.
-                    """,
+            A body lies in the bathtub, rolled up in the shower curtain. A can of hairspray, a brush,
+            and a bloody tube of toothpaste are scattered around the sink. The only door is the way you
+            came in. There is no other way out.
+                """,
                 'item' : ['hairspray', 'brush', 'toothpaste']
             },
 
             'Front Yard' : {
                 'west' : 'Living Room',
                 'description' : """
-                    The streetlamps are giving off an eerie light, and the night is quiet -- no frogs croak,
-                    no cicadas chirp, no dogs bark. There is nothing but the sound of static on the TV from
-                    inside. A crushed walkman is at your feet.
-                    """,
+            The streetlamps are giving off an eerie light, and the night is quiet -- no frogs croak,
+            no cicadas chirp, no dogs bark. There is nothing but the sound of static on the TV from
+            inside. A crushed walkman is at your feet.
+                """,
                 'item' : ['walkman']
             },
 
             'Back Yard' : {
                 'east' : 'Kitchen',
                 'description' : """
-                    Dense woods line the back of the yard, and the night is quiet. Too quiet. A rake is propped
-                    against the house, and a kids' pink beach ball lies abandoned in the grass.
-                    """,
+            Dense woods line the back of the yard, and the night is quiet. Too quiet. A rake is propped
+            against the house, and a kids' pink beach ball lies abandoned in the grass.
+                """,
                 'item' : ['rake', 'ball']
             },
 
             'Upstairs' : {
                 'downstairs' : 'Living Room',
                 'description' : """
-                    What are you, a noob? Never run up the stairs when a killer's on the loose. You've earned
-                    what you get now.
-                    """
+            Well, you've earned what you get now.
+
+                """
             }
 
          }
@@ -181,25 +243,21 @@ def main():
     global currentRoom, inventory
     currentRoom = 'Living Room'
     pygame.init()
-    pygame.mixer.init()
-    sd = 'sound'
-
-    opening = pygame.mixer.Sound(os.path.join(sd, 'opening.ogg'))
-    killer  = pygame.mixer.Sound(os.path.join(sd, 'killer.ogg'))
-    #os.system('start image/finalgirl.jpg')
+    
 
     # start with some sound
-    opening.play()
+    play_sound("opening")
     
     # show splash screen
     splashScreen()
     
     showInstructions()
-
+    showStatus()
+    
     #loop forever
     while True:
         update_time()
-        showStatus()
+        #showStatus()
     
         # Prompt for next user move
         move = ''
@@ -219,11 +277,13 @@ def main():
             if move[1] in rooms[currentRoom]:
                 #set the current room to the new room
                 currentRoom = rooms[currentRoom][move[1]]
+                showStatus()
             #there is no door (link) to the new room
             else:
                 print('You can\'t go that way!')
     
-        #if they type 'get' first
+
+        # Respond to "get" commands
         if move[0] == 'get' :
             #if the room contains an item, and the item is the one they want to get
             if move[1] == 'time' and currentRoom == 'Bedroom':
@@ -249,6 +309,22 @@ def main():
                  Your pockets are full, my friend, and you\'re too panicked to drop anything.
                  """)
 
+
+        # Respond to "drop" commands
+        if move[0] == "drop":
+            if move[1] in inventory:
+                rooms[currentRoom]['item'] += [move[1]]
+                inventory.remove(move[1])
+                print(f"""
+                You drop the {move[1]}.
+                """)
+            else:
+                print("""
+                You can't drop that!
+                """)
+
+
+        # Respond to "open" commands
         if move[0] == 'open':
             if move[1] != 'book':
                 print("""
@@ -262,6 +338,8 @@ def main():
                 say incantation!
                 """)
 
+
+        # Respond to "say" commands
         if move[0] == 'say':
             if move[1] == 'incantation':
                 inventory += ['incantation']
@@ -279,8 +357,9 @@ def main():
                 So, like, when did you decide you have a deathwish? Do you not understand what's
                 going on here?? Hush it and survive.
                 """)
-            
-        # if they're dumb enough to run upstairs when there's a killer in the house
+
+
+        # If they're dumb enough to run upstairs when there's a killer in the house
         if currentRoom == "Upstairs":
             print("""
                 What are you, a noob?? Never run up the stairs when a killer is looking for you.
@@ -291,12 +370,11 @@ def main():
                 
                 She is the Final Girl.
             """)
-            killer.play()
-            while (pygame.mixer.get_busy()):
-                time.sleep(0.1)
+            play_sound("killer")
             break
 
-        # if they've run out of time
+
+        # Losing scenario: They run out of time
         if time_str == "02:34":
             print("""
                 From behind you in the {currentRoom}, you hear the shuffle of feet and the scrape of metal against wall.
@@ -305,12 +383,12 @@ def main():
                 
                 You are not the Final Girl.
             """)
-            killer.play()
-            while (pygame.mixer.get_busy()):
-                time.sleep(0.1)
+            play_sound("killer")
+            
             break
 
-        # if they've managed to win
+
+        # If they have gathered the necessary requirements for the fisticuffs, start the finale mode
         if check_win():
             print('Great battle ensues! You win!')
             break
